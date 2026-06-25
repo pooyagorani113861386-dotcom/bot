@@ -3,22 +3,23 @@ import os
 from aiogram import Bot, Dispatcher, types
 from aiogram.filters import CommandStart
 
+# 🔑 توکن (از Railway / env)
 TOKEN = os.getenv("BOT_TOKEN")
 
 bot = Bot(token=TOKEN)
 dp = Dispatcher()
 
-# 🔒 کانال‌ها
+# 🔒 کانال‌های اجباری
 CHANNELS = [
     "@Spark_news_tel",
     "@Spark_rap",
     "@Spark_sport"
 ]
 
-# 📦 آرشیو
+# 📦 کانال آرشیو
 ARCHIVE_CHANNEL = -1004336027245
 
-# 🎬 کارتون‌ها
+# 🎬 کارتون‌ها (هر چی خواستی اضافه کن)
 CARTOONS = {
     "ben10": {
         "title": "بن تن",
@@ -62,7 +63,7 @@ async def send_cartoon(user_id: int, code: str):
 
     notice = await bot.send_message(
         user_id,
-        "⏳ این فایل بعد از 30 ثانیه حذف می‌شود"
+        f"⏳ {data['title']} بعد از 30 ثانیه حذف می‌شود"
     )
 
     await asyncio.sleep(30)
@@ -73,11 +74,15 @@ async def send_cartoon(user_id: int, code: str):
     except Exception as e:
         print("Delete error:", e)
 
-# 🚀 استارت
+# 🚀 استارت (FIX کامل لینک)
 @dp.message(CommandStart())
 async def start(message: types.Message):
-    args = message.text.split(maxsplit=1)
-    code = args[1] if len(args) > 1 else None
+    text = message.text or ""
+    parts = text.split(maxsplit=1)
+
+    code = parts[1] if len(parts) > 1 else None
+
+    print("START CODE:", code)
 
     if not code or code not in CARTOONS:
         await message.answer("❌ لینک نامعتبره")
@@ -100,6 +105,7 @@ async def check(call: types.CallbackQuery):
         await call.answer("❌ هنوز عضو همه کانال‌ها نیستی", show_alert=True)
         return
 
+    await call.message.answer("✅ عضویت تایید شد")
     await send_cartoon(call.from_user.id, "ben10")
 
 # ▶️ اجرا
