@@ -24,12 +24,15 @@ ARCHIVE_CHANNEL = -1004336027245
 VIDEOS = {
     "video": {
         "message_id": 6
-    }
-}
-,
+    },
+
     "film2": {
         "message_id": 7
-    } 
+    }
+}
+
+# 💾 ذخیره درخواست کاربر
+USER_REQUESTS = {}
 
 # 🧠 چک عضویت
 async def is_member(user_id: int):
@@ -44,13 +47,15 @@ async def is_member(user_id: int):
 
 # 📢 دکمه عضویت
 def join_keyboard():
-    return types.InlineKeyboardMarkup(inline_keyboard=[
-        [types.InlineKeyboardButton(text="📢 کانال 1", url="https://t.me/Spark_news_tel")],
-        [types.InlineKeyboardButton(text="🎤 کانال 2", url="https://t.me/Spark_rap")],
-        [types.InlineKeyboardButton(text="⚽️ کانال 3", url="https://t.me/Spark_sport")],
-        [types.InlineKeyboardButton(text="🌭 کانال 4", url="https://t.me/Spark_hotdog")],
-        [types.InlineKeyboardButton(text="🔄 تایید عضویت", callback_data="check")]
-    ])
+    return types.InlineKeyboardMarkup(
+        inline_keyboard=[
+            [types.InlineKeyboardButton(text="📢 کانال 1", url="https://t.me/Spark_news_tel")],
+            [types.InlineKeyboardButton(text="🎤 کانال 2", url="https://t.me/Spark_rap")],
+            [types.InlineKeyboardButton(text="⚽️ کانال 3", url="https://t.me/Spark_sport")],
+            [types.InlineKeyboardButton(text="🌭 کانال 4", url="https://t.me/Spark_hotdog")],
+            [types.InlineKeyboardButton(text="🔄 تایید عضویت", callback_data="check")]
+        ]
+    )
 
 # 📥 ارسال ویدئو + حذف ۳۰ ثانیه
 async def send_video(user_id: int, code: str):
@@ -89,6 +94,9 @@ async def start(message: types.Message):
         await message.answer("❌ لینک نامعتبره")
         return
 
+    # ذخیره درخواست کاربر
+    USER_REQUESTS[message.from_user.id] = code
+
     if not await is_member(message.from_user.id):
         await message.answer(
             "❗️ برای دریافت ویدئو باید عضو همه کانال‌ها باشی 👇",
@@ -103,11 +111,23 @@ async def start(message: types.Message):
 async def check(call: types.CallbackQuery):
 
     if not await is_member(call.from_user.id):
-        await call.answer("❌ هنوز عضو همه کانال‌ها نیستی", show_alert=True)
+        await call.answer(
+            "❌ هنوز عضو همه کانال‌ها نیستی",
+            show_alert=True
+        )
+        return
+
+    code = USER_REQUESTS.get(call.from_user.id)
+
+    if not code or code not in VIDEOS:
+        await call.answer(
+            "❌ لینک منقضی شده، دوباره روی لینک فیلم بزن",
+            show_alert=True
+        )
         return
 
     await call.message.answer("✅ عضویت تایید شد")
-    await send_video(call.from_user.id, "video")
+    await send_video(call.from_user.id, code)
 
 # ▶️ اجرا
 async def main():
