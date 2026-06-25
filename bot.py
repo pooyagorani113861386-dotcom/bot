@@ -8,7 +8,7 @@ TOKEN = os.getenv("BOT_TOKEN")
 bot = Bot(token=TOKEN)
 dp = Dispatcher()
 
-# 🔒 کانال‌های اجباری
+# 🔒 کانال‌ها
 CHANNELS = [
     "@Spark_news_tel",
     "@Spark_rap",
@@ -23,6 +23,10 @@ CARTOONS = {
     "ben10": {
         "title": "بن تن",
         "message_id": 2
+    },
+    "naruto": {
+        "title": "ناروتو",
+        "message_id": 3
     }
 }
 
@@ -43,20 +47,33 @@ def join_keyboard():
         [types.InlineKeyboardButton(text="📢 کانال 1", url="https://t.me/Spark_news_tel")],
         [types.InlineKeyboardButton(text="🎤 کانال 2", url="https://t.me/Spark_rap")],
         [types.InlineKeyboardButton(text="⚽ کانال 3", url="https://t.me/Spark_sport")],
-        [types.InlineKeyboardButton(text="🔄 بررسی عضویت", callback_data="check:ben10")]
+        [types.InlineKeyboardButton(text="🔄 تایید عضویت", callback_data="check")]
     ])
 
-# 📥 ارسال کارتون
+# 📥 ارسال + حذف ۳۰ ثانیه
 async def send_cartoon(user_id: int, code: str):
     data = CARTOONS[code]
 
-    await bot.copy_message(
+    msg = await bot.copy_message(
         chat_id=user_id,
         from_chat_id=ARCHIVE_CHANNEL,
         message_id=data["message_id"]
     )
 
-# 🚀 شروع (FIX کامل لینک start)
+    notice = await bot.send_message(
+        user_id,
+        "⏳ این فایل بعد از 30 ثانیه حذف می‌شود"
+    )
+
+    await asyncio.sleep(30)
+
+    try:
+        await bot.delete_message(user_id, msg.message_id)
+        await bot.delete_message(user_id, notice.message_id)
+    except Exception as e:
+        print("Delete error:", e)
+
+# 🚀 استارت
 @dp.message(CommandStart())
 async def start(message: types.Message):
     args = message.text.split(maxsplit=1)
@@ -75,22 +92,15 @@ async def start(message: types.Message):
 
     await send_cartoon(message.from_user.id, code)
 
-# 🔄 بررسی عضویت (FIX امن)
-@dp.callback_query(lambda c: c.data.startswith("check"))
+# 🔄 تایید عضویت
+@dp.callback_query(lambda c: c.data == "check")
 async def check(call: types.CallbackQuery):
-
-    parts = call.data.split(":")
-    if len(parts) < 2:
-        await call.answer("خطا", show_alert=True)
-        return
-
-    code = parts[1]
 
     if not await is_member(call.from_user.id):
         await call.answer("❌ هنوز عضو همه کانال‌ها نیستی", show_alert=True)
         return
 
-    await send_cartoon(call.from_user.id, code)
+    await send_cartoon(call.from_user.id, "ben10")
 
 # ▶️ اجرا
 async def main():
