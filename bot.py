@@ -26,6 +26,10 @@ VIDEOS = {
         "message_id": 6
     }
 }
+,
+    "film2": {
+        "message_id": 7
+    } 
 
 # 🧠 چک عضویت
 async def is_member(user_id: int):
